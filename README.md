@@ -18,3 +18,5 @@ Summarization is a hard to evaluate NLP task. A number of standard metrics such 
 1. https://www.ijcai.org/Proceedings/05/Papers/0505.pdf
 2. https://github.com/danieldeutsch/sacrerouge/blob/master/doc/metrics/pyreval.md
 
+#### Link to Google Drive
+[Link](https://drive.google.com/drive/folders/1_EzQMxyx_lvsHvgrJs7FoYFALpsZM3Xe?usp=sharing)
