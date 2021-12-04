@@ -17,9 +17,7 @@ Summarization is a hard to evaluate NLP task. A number of standard metrics such 
 #### Misc
 1. https://www.ijcai.org/Proceedings/05/Papers/0505.pdf
 2. https://github.com/danieldeutsch/sacrerouge/blob/master/doc/metrics/pyreval.md
-
-#### [Link](https://drive.google.com/drive/folders/1_EzQMxyx_lvsHvgrJs7FoYFALpsZM3Xe?usp=sharing) to Google Drive
-
-[Link](https://github.com/abhisha1991/w266_final_project/blob/main/report/ShapSum__A_framework_to_predict_human_judgement_multi_dimensional_qualities_for_text_summarization_.pdf) to paper.
-[Link](https://docs.google.com/presentation/d/1QM0jkJZ2foetrGy1y6AL8szoAcRdYTnJ8TeHR9dOSR4/edit?usp=sharing) to presentation.
+3. [Link](https://drive.google.com/drive/folders/1_EzQMxyx_lvsHvgrJs7FoYFALpsZM3Xe?usp=sharing) to Google Drive
+4. [Link] (https://github.com/abhisha1991/w266_final_project/blob/main/report/ShapSum__A_framework_to_predict_human_judgement_multi_dimensional_qualities_for_text_summarization_.pdf) to paper.
+5. [Link](https://docs.google.com/presentation/d/1QM0jkJZ2foetrGy1y6AL8szoAcRdYTnJ8TeHR9dOSR4/edit?usp=sharing) to presentation.
 
