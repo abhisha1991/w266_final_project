@@ -66,12 +66,12 @@ print(torch.__version__)
 from datasets import load_dataset
 from datasets import get_dataset_config_names
 
-def get_cnn_dm(version='3.0.0'):
+def get_cnn_dm(version='3.0.0', split='test'):
   # configs = get_dataset_config_names("cnn_dailymail")
   # print(configs)
-  return load_dataset('cnn_dailymail', version, split='test')
+  return load_dataset('cnn_dailymail', version=version, split=split)
   
-dataset = get_cnn_dm()
+dataset = get_cnn_dm(version='3.0.0', split='validation')
 # see dataset info
 # pp.pprint(dataset.info)
 
@@ -87,12 +87,14 @@ def get_cnndm_by_id(dataset, id, return_article_only=True):
   id = id.replace('dm-test-', '')
   id = id.replace('dm-train-', '')
   id = id.replace('dm-dev-', '')
+  id = id.replace('dm-validation-', '')
   id = id.replace('dm-val-', '')
-  
+
   id = id.replace('cnn-test-', '')
   id = id.replace('cnn-train-', '')
   id = id.replace('cnn-dev-', '')
   id = id.replace('cnn-val-', '')
+  id = id.replace('cnn-validation-', '')
   try:
     highlight = dataset.filter(lambda x: x['id'] == id)['highlights'][0]
     article = dataset.filter(lambda x: x['id'] == id)['article'][0]
@@ -264,6 +266,8 @@ def get_rouge(ngram, prediction, ref):
 
 get_rouge(ngram=4, prediction=predictions[0], ref=refs[0])
 
+get_rouge(ngram=4, prediction="I like homes", ref=["I like homes"])
+
 """#### Soft Match (ROUGE-WE)"""
 
 from summ_eval.rouge_we_metric import RougeWeMetric
@@ -275,10 +279,10 @@ global_we_rouge3 = RougeWeMetric(n_gram=3)
 global_we_rouge4 = RougeWeMetric(n_gram=4)
 global_we_rouge5 = RougeWeMetric(n_gram=5)
 
-def rouge_we_metric(refs, predictions, ngram=3, rouge=None):
+def rouge_we_metric(refs, predictions, ngram=3, rouge=None, aggregate=False):
   if rouge == None:
     rouge = RougeWeMetric(n_gram = ngram)
-  rouge_dict = rouge.evaluate_batch(predictions, refs)
+  rouge_dict = rouge.evaluate_batch(predictions, refs, aggregate = aggregate)
   return rouge_dict
 
 rouge_we_metric(refs, predictions, rouge = global_we_rouge3)
@@ -516,13 +520,16 @@ import numpy as np
 
 global_summaqa = SummaQAMetric()
 
-def get_summaqa_metric(summaries, articles, summaqa=None):
+def get_summaqa_metric(summaries, articles, summaqa=None, aggregate=False):
   if summaqa == None:
     summaqa = SummaQAMetric()
   try:  
-    summaqa_dict = summaqa.evaluate_batch(summaries, articles)
+    summaqa_dict = summaqa.evaluate_batch(summaries, articles, aggregate = aggregate)
     return summaqa_dict
   except:
+    # if we get back this, it likely means memory allocation isn't enough
+    # we have run out of memory
+    print("Returning NAN value for SummaQA - it is likely that we have reached OOM")
     return {'summaqa_avg_fscore': np.nan, 'summaqa_avg_prob': np.nan}
 
 get_summaqa_metric(refs, articles, global_summaqa)
@@ -777,21 +784,21 @@ def main_metric_run(row):
 
   if 'rouge_we' in metric_list:
     rouge_we_dic = {}
-    rouge_we_metric1 = rouge_we_metric(refs = [ref], predictions = [prediction], ngram=1, rouge=global_we_rouge1)
-    rouge_we_dic['1_recall'] = rouge_we_metric1['rouge_we_1_r']
-    rouge_we_dic['1_f1'] = rouge_we_metric1['rouge_we_1_f']
+    rouge_we_metric1 = rouge_we_metric(refs = [ref], predictions = [prediction], ngram=1)
+    rouge_we_dic['1_recall'] = rouge_we_metric1[0]['rouge_we_1_r']
+    rouge_we_dic['1_f1'] = rouge_we_metric1[0]['rouge_we_1_f']
 
-    rouge_we_metric2 = rouge_we_metric(refs = [ref], predictions = [prediction], ngram=2, rouge=global_we_rouge2)
-    rouge_we_dic['2_recall'] = rouge_we_metric2['rouge_we_2_r']
-    rouge_we_dic['2_f1'] = rouge_we_metric2['rouge_we_2_f']
+    rouge_we_metric2 = rouge_we_metric(refs = [ref], predictions = [prediction], ngram=2)
+    rouge_we_dic['2_recall'] = rouge_we_metric2[0]['rouge_we_2_r']
+    rouge_we_dic['2_f1'] = rouge_we_metric2[0]['rouge_we_2_f']
 
-    rouge_we_metric3 = rouge_we_metric(refs = [ref], predictions = [prediction], ngram=3, rouge=global_we_rouge3)
-    rouge_we_dic['3_recall'] = rouge_we_metric3['rouge_we_3_r']
-    rouge_we_dic['3_f1'] = rouge_we_metric3['rouge_we_3_f']
+    rouge_we_metric3 = rouge_we_metric(refs = [ref], predictions = [prediction], ngram=3)
+    rouge_we_dic['3_recall'] = rouge_we_metric3[0]['rouge_we_3_r']
+    rouge_we_dic['3_f1'] = rouge_we_metric3[0]['rouge_we_3_f']
 
-    rouge_we_metric4 = rouge_we_metric(refs = [ref], predictions = [prediction], ngram=4, rouge=global_we_rouge4)
-    rouge_we_dic['4_recall'] = rouge_we_metric4['rouge_we_4_r']
-    rouge_we_dic['4_f1'] = rouge_we_metric4['rouge_we_4_f']
+    rouge_we_metric4 = rouge_we_metric(refs = [ref], predictions = [prediction], ngram=4)
+    rouge_we_dic['4_recall'] = rouge_we_metric4[0]['rouge_we_4_r']
+    rouge_we_dic['4_f1'] = rouge_we_metric4[0]['rouge_we_4_f']
 
     result_metrics['rouge_we'].append(rouge_we_dic)
 
@@ -894,7 +901,8 @@ def dask_lazy_metric_run(df):
     lazy_result = dask.delayed(main_metric_run)(row)
     lazy_results.append(lazy_result)
   res = dask.compute(*lazy_results)
-  return res
+  df = pd.concat([r for r in res], axis=1)
+  return df.T
 
 import pandas as pd
 import dask.dataframe as dd
@@ -902,26 +910,77 @@ from dask.multiprocessing import get
 import dask
 
 # read df and partition it based on cores available
-df = pd.read_csv('data.csv')
-df = df.head(10)
+df = pd.read_csv('data_scored.csv')
+#df = df.head(10)
 
 # decide metrics on which to run the df
 metric_list = available_metrics 
-metric_list = ['rouge', 'rouge_we', 'meteor', 'chrf', 'summary_stats']
+# be careful when using 'rouge_we' - it takes up a mem - compute in batch mode stand alone
+# prefer running 'avg_slor' in batch mode and by itself
+# prefer running 'summaqa' and 'bert_score' individually (memory requirements)
+metric_list = ['rouge', 'meteor', 'chrf', 'summary_stats']
+metric_list = ['bert_score']
 
 # ddf = dd.from_pandas(df, npartitions=5)
 # df = dask_apply_metric_run(ddf)
-df = dask_lazy_metric_run(df)
+#df = dask_lazy_metric_run(df)
 
 """# Store Data as CSV"""
 
 import datetime
 from google.colab import files
 
-now = datetime.datetime.now()
-filename = now.strftime("%Y-%m-%d-%H-%M-%S")
+def write_to_csv(df, inner_filename):
+  now = datetime.datetime.now()
+  filename = now.strftime("%Y-%m-%d-%H-%M-%S")
 
-compression_opts = dict(method='zip', archive_name='data_scored.csv')
+  compression_opts = dict(method='zip', archive_name='{}.csv'.format(inner_filename))
 
-df.to_csv('{}.zip'.format(filename), index=False, compression = compression_opts)
-files.download('{}.zip'.format(filename))
+  df.to_csv('{}.zip'.format(filename), index=False, compression = compression_opts)
+  files.download('{}.zip'.format(filename))
+
+write_to_csv(df, inner_filename='data_scored')
+
+"""# Extract SummEval Metric Scores
+
+Note that we only extract the 11 reference summary scores for our analysis (from the summ eval paper results)
+"""
+
+!pip install gdown
+!pip install flatten_json
+
+!gdown https://drive.google.com/uc?id=1d2Iaz3jNraURP1i7CfTqPIj8REZMJ3tS
+
+import numpy as np
+import json
+import pandas as pd
+from flatten_json import flatten
+
+summeval_metric_set = ['summaqa_avg_prob', 'cider', 'percentage_novel_3-gram', 
+              'sentence_movers_glove_sms', 'percentage_repeated_3-gram_in_summ', 
+              'summary_length', 'compression', 'bert_score_recall', 'rouge_we_2_r', 
+              'bleu', 'percentage_novel_2-gram', 'rouge_we_3_r', 
+              'rouge_we_2_f', 'coverage', 'rouge_we_3_f', 'density', 
+              'supert', 'rouge', 'blanc', 's3_pyr', 'rouge_we_1_p', 
+              'percentage_repeated_2-gram_in_summ', 's3_resp', 
+              'bert_score_precision', 'rouge_we_1_r', 'rouge_we_1_f', 
+              'percentage_repeated_1-gram_in_summ', 'percentage_novel_1-gram', 
+              'mover_score', 'chrf', 'summaqa_avg_fscore', 'rouge_we_2_p', 
+              'bert_score_f1', 'meteor', 'rouge_we_3_p']
+
+def extract_summeval_metric_scores():
+  with open('/content/model_annotations.aligned.scored.jsonl', 'r') as json_file:
+    json_list = list(json_file)
+
+    dic_flattened = []
+    for json_str in json_list:
+        annotation = json.loads(json_str)
+        del annotation['metric_scores_1'], annotation['metric_scores_6']
+        dic_flattened.append(flatten(annotation))
+
+    data = pd.DataFrame(dic_flattened)
+    return data
+
+d = extract_summeval_metric_scores()
+write_to_csv(d, inner_filename='summeval_scores')
+
