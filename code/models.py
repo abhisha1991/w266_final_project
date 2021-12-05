@@ -82,7 +82,7 @@ import spacy
 nltk.download('punkt') 
 
 # toggle setting to use test or validation data during eval
-use_test = False
+use_test = True
 
 # dataset picker toggle (cnndm vs xsum)
 use_cnndm = True
@@ -120,34 +120,34 @@ get_ipython().events.register('pre_run_cell', set_css)
 # returns pruned context, provides option to shuffle sentences inside context
 # should discourage using shuffle because summary depends on order between sentences
 # The method adds only whole sentences to preserve fluency
-def prune_text(text, max_token_len=500, shuffle=False):
+def prune_text(text, max_token_len=500, shuffle=False, verbose=False):
   sentences = get_sentences_from_text(text)
   if shuffle:
     random.shuffle(sentences)
   result = ''
+  if verbose:
+    print("Number of sentences: {}".format(len(sentences)))
   nlp = spacy.load("en_core_web_sm")
   for sent in sentences:
     doc = nlp(result)
+    if verbose:
+      print("Number of tokens in document so far: {}".format(len(doc)))
+      
     if len(doc) >= max_token_len:
       return result
     doc2 = nlp(sent)
+    if verbose:
+      print("Number of tokens in incoming sentence: {}".format(len(doc2)))
+
     if len(doc2) + len(doc) < max_token_len:
       result += " " + sent
 
   return result 
 
-# very strange that there isn't a simple way to access ith element in tfds easily
 def get_byidx(data, idx):
   if idx < 0 or idx >= len(data):
     raise Error("Index out of bounds")
-  if use_cnndm:
-    for c, elem in enumerate(data):
-      if c == idx:
-        return elem.numpy().decode()
-  else:
-    return data[idx]
-
-  return None
+  return data[idx]
 
 def get_data_as_str_list(data):
   if not use_cnndm:
@@ -252,18 +252,19 @@ In all, the corpus has 286,817 training pairs, 13,368 validation pairs and 11,48
 Download and load raw data. Data is in binary format in a tf.Dadaset structure
 """
 
+import datasets
 if use_cnndm:
-  data, info = tfds.load('cnn_dailymail', with_info=True)
+    data = datasets.load_dataset('cnn_dailymail', version = '3.0.0')
+  # there's sometimes an issue downloading this dataset, which is known and is transient
+  # https://github.com/huggingface/datasets/issues/996
+  # to get around it, we use an alt way
+  # https://github.com/JafferWilson/Process-Data-of-CNN-DailyMail
 
 """Extract train, val, and test data"""
 
 #### DO NOT MODIFY THESE VARIABLES ####
 if use_cnndm:
   train_data, val_data, test_data = data['train'], data['validation'], data['test']
-
-# get an indication of the object type
-if use_cnndm:
-  print(train_data)
 
 """The examples have each an "article" and "highlights", let's extract them into their own data objects
 
@@ -273,20 +274,23 @@ if use_cnndm:
 
 #### DO NOT MODIFY THESE VARIABLES ####
 if use_cnndm:
-  X_train = train_data.map(lambda x: x['article'])
-  Y_train = train_data.map(lambda y: y['highlights'])
+  X_train = train_data['article']
+  Y_train = train_data['highlights']
+  Id_train = train_data['id']
   print(len(X_train))
   assert len(X_train) == len(Y_train)
 
 if use_cnndm:
   def get_eval_set(verbose = False):
     if use_test:
-      X = val_data.map(lambda x: x['article'])
-      Y = val_data.map(lambda y: y['highlights'])
+      X = val_data['article']
+      Y = val_data['highlights']
+      Id = val_data['id']
     else:  
-      X = test_data.map(lambda x: x['article'])
-      Y = test_data.map(lambda y: y['highlights'])
-    
+      X = test_data['article']
+      Y = test_data['highlights']
+      Id = test_data['id']
+
     assert(len(X) ==  len(Y))
     if verbose:
       if use_test:
@@ -296,7 +300,7 @@ if use_cnndm:
 
       print("Count of examples: {}".format(len(X)))
 
-    return X, Y
+    return X, Y, Id
 
 """Print a few example articles"""
 
@@ -306,9 +310,9 @@ if use_cnndm:
   while i < maxprint:
     idx = np.random.randint(0, 100, size = 1)
     print("################################ ARTICLE ################################")
-    print(get_byidx(X_train, idx))
+    print(get_byidx(X_train, idx[0]))
     print("################################ SUMMARY ################################")
-    print(get_byidx(Y_train, idx))
+    print(get_byidx(Y_train, idx[0]))
     print('\n')
     i +=1
 
@@ -326,10 +330,6 @@ if not use_cnndm:
 #### DO NOT MODIFY THESE VARIABLES ####
 if not use_cnndm:
   train_data, val_data, test_data = data['train'], data['validation'], data['test']
-
-# get an indication of the object type
-if not use_cnndm:
-  print(train_data)
 
 """The examples have each a "document" and a "summary", let's extract them into their own data objects"""
 
@@ -358,7 +358,7 @@ if not use_cnndm:
 
       print("Count of examples: {}".format(len(X)))
 
-    return X, Y
+    return X, Y, None
 
 """Print a few examples"""
 
@@ -376,7 +376,7 @@ if not use_cnndm:
 
 """Create Evaluation Set"""
 
-X_eval, Y_eval = get_eval_set(verbose=True)
+X_eval, Y_eval, Id_eval = get_eval_set(verbose=True)
 
 """# Extractive Models
 
@@ -390,8 +390,12 @@ This is actually expected to be a fair baseline considering that we are evaluati
 def topN_summarizer(text, top=3):
   sentences = get_sentences_from_text(text)
   summary = []
+  if top >= len(sentences):
+    top = len(sentences)
+
   for i in range(top):
     summary.append(sentences[i])
+    
   return " ".join(summary)
 
 def top_bottom_summarizer(text):
@@ -399,20 +403,32 @@ def top_bottom_summarizer(text):
   if len(sentences) > 1:
     first = sentences[0]
     last = sentences[-1]
+    # if last is super short, then pick the one before last sentence
+    if len(last) < 3 and len(sentences) > 2:
+      last = sentences[-2]
+    
+    # if first is super short, then pick the one after first sentence
+    if len(first) < 3 and len(sentences) > 2:
+      first = sentences[1]
+
     return first + " " + last 
 
   return " ".join(sentences)
 
-def shuffle_summarizer(text, minlen=30):
+def shuffle_summarizer(text, maxlen=30):
   sentences = get_sentences_from_text(text)
   idxs = np.random.randint(0, len(sentences), size = len(sentences))
   summary = []
   for idx in idxs:
-    if len(get_words(" ".join(summary))) >= minlen:
+    if len(get_words(" ".join(summary))) >= maxlen:
       return " ".join(summary)
     
     summary.append(sentences[idx])
   
+  # sometimes we output a 0 summary with this, so we should retry
+  if len(summary) == 0:
+    return shuffle_summarizer(text, maxlen)
+
   return " ".join(summary)
 
 # reference summary for comparison
@@ -499,6 +515,10 @@ def textrank_glove_summarizer(text, glove_ndim=100, num_sentences=3):
   scores = nx.pagerank(nx_graph)
   ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
   summary = []
+  
+  if num_sentences >= len(ranked_sentences):
+    num_sentences = len(ranked_sentences)
+
   for i in range(num_sentences):
     summary.append(ranked_sentences[i][1])
 
@@ -567,6 +587,10 @@ def wordfreq_cossim_textrank_summarizer(text, top=3):
   # rank sentences based on page rank
   ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
   summary = []
+
+  if top >= len(ranked_sentences):
+    top = len(ranked_sentences)
+
   for i in range(top):
     summary.append(ranked_sentences[i][1])
   
@@ -614,18 +638,25 @@ TODO: Current model can handle up to 512 tokens, we may need to prune inputs bef
 
 from transformers import PegasusTokenizer, TFPegasusModel, TFPegasusForConditionalGeneration
 
+pegasus_model = TFPegasusForConditionalGeneration.from_pretrained('google/pegasus-xsum')
+pegasus_tokenizer = PegasusTokenizer.from_pretrained('google/pegasus-xsum')
+
 # always batch the input since the model takes a while to load
-def pegasus_summarizer(list_text, model_name='google/pegasus-xsum', min_length=100, num_beams=5, no_repeat_ngram_size=1):
-  pegasus_model = TFPegasusForConditionalGeneration.from_pretrained(model_name)
-  pegasus_tokenizer = PegasusTokenizer.from_pretrained(model_name)
+def pegasus_summarizer(list_text, pegasus_model = None, pegasus_tokenizer = None, model_name='google/pegasus-xsum', min_length=20, max_length=100, num_beams=5, no_repeat_ngram_size=1):
+  if pegasus_model == None or pegasus_tokenizer == None:
+    pegasus_model = TFPegasusForConditionalGeneration.from_pretrained(model_name)
+    pegasus_tokenizer = PegasusTokenizer.from_pretrained(model_name)
+    
   pegasus_inputs = pegasus_tokenizer(list_text, return_tensors='tf', padding=True)
 
   print('\nThere are', pegasus_inputs['input_ids'].shape[0], 'article(s) of length', pegasus_inputs['input_ids'].shape[1], 'to summarize')
   
-  pegasus_summary_ids = pegasus_model.generate(pegasus_inputs['input_ids'], min_length = min_length, num_beams = num_beams, no_repeat_ngram_size = no_repeat_ngram_size)
+  pegasus_summary_ids = pegasus_model.generate(pegasus_inputs['input_ids'], min_length = min_length, max_length = max_length, num_beams = num_beams, no_repeat_ngram_size = no_repeat_ngram_size)
   return [pegasus_tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=False) for g in pegasus_summary_ids]
 
-pegasus_summarizer([get_byidx(X_eval, 0)])
+pegasus_summarizer([get_byidx(X_eval, 0)], pegasus_model, pegasus_tokenizer)
+
+pegasus_summarizer(X_eval[:2], pegasus_model, pegasus_tokenizer)
 
 """## 2. Text-To-Text Transfer Transformer (T5)
 
@@ -636,19 +667,23 @@ TODO: Current model can handle up to 512 tokens, we may need to prune inputs bef
 
 from transformers import T5Tokenizer, TFT5Model, TFT5ForConditionalGeneration
 
+t5_model = TFT5ForConditionalGeneration.from_pretrained('t5-base')
+t5_tokenizer = T5Tokenizer.from_pretrained('t5-base')
+
 # always batch the input since the model takes a while to load
-def t5_summarizer(list_text, model_name='t5-large', num_beams=3, no_repeat_ngram_size=1):
-  t5_model = TFT5ForConditionalGeneration.from_pretrained(model_name)
-  t5_tokenizer = T5Tokenizer.from_pretrained(model_name)
+def t5_summarizer(list_text, t5_model = None, t5_tokenizer=None, model_name='t5-base', num_beams=3, min_length=20, max_length=100, no_repeat_ngram_size=1):
+  if t5_model == None or t5_tokenizer == None:
+    t5_model = TFT5ForConditionalGeneration.from_pretrained(model_name)
+    t5_tokenizer = T5Tokenizer.from_pretrained(model_name)
   # add summarize in front of each data point to indicate what task is needed
   list_text = ["summarize: " + t for t in list_text]
 
   t5_inputs = t5_tokenizer(list_text, return_tensors='tf', padding=True)
   print('\nThere are', t5_inputs['input_ids'].shape[0], 'article(s) of length', t5_inputs['input_ids'].shape[1], 'to summarize')
-  t5_summary_ids = t5_model.generate(t5_inputs['input_ids'], num_beams = num_beams, no_repeat_ngram_size = no_repeat_ngram_size)
+  t5_summary_ids = t5_model.generate(t5_inputs['input_ids'], num_beams = num_beams, min_length=20, max_length=100, no_repeat_ngram_size = no_repeat_ngram_size)
   return [t5_tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=False) for g in t5_summary_ids]
 
-t5_summarizer([get_byidx(X_eval, 0)])
+t5_summarizer([get_byidx(X_eval, 0)], t5_model=t5_model, t5_tokenizer=t5_tokenizer)
 
 """## 3. BART
 
@@ -659,17 +694,23 @@ BART is particularly effective when fine-tuned for text generation (e.g. summari
 
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
 
-# always batch the input since the model takes a while to load
-def bart_summarizer(list_text, model_name='facebook/bart-large-cnn', num_beams=3, no_repeat_ngram_size=1):
-  bart_model = BartForConditionalGeneration.from_pretrained(model_name)
-  bart_tokenizer = BartTokenizer.from_pretrained(model_name)
+bart_model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
+bart_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
 
-  inputs = bart_tokenizer(list_text, max_length=1024, return_tensors='pt')
+# always batch the input since the model takes a while to load
+def bart_summarizer(list_text, bart_model = None, bart_tokenizer = None, model_name='facebook/bart-large-cnn', num_beams=3, min_length=20, max_length=100, no_repeat_ngram_size=1):
+  if bart_model == None or bart_tokenizer == None:
+    bart_model = BartForConditionalGeneration.from_pretrained(model_name)
+    bart_tokenizer = BartTokenizer.from_pretrained(model_name)
+
+  inputs = bart_tokenizer(list_text, max_length=1024, return_tensors='pt', truncation=True, padding=True)
   print('\nThere are', inputs['input_ids'].shape[0], 'article(s) of length', inputs['input_ids'].shape[1], 'to summarize')
-  summary_ids = bart_model.generate(inputs['input_ids'], num_beams= num_beams, early_stopping=True)
+  summary_ids = bart_model.generate(inputs['input_ids'], min_length=20, max_length=100, num_beams= num_beams, early_stopping=True)
   return [bart_tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=False) for g in summary_ids]
 
 bart_summarizer([get_byidx(X_eval, 0)])
+
+bart_summarizer(X_eval[:2])
 
 """## 4. GPT-3
 
@@ -686,7 +727,7 @@ For this task, we are simply using the regular GPT3 API by subscribing to the be
 # https://share.hsforms.com/1Lfc7WtPLRk2ppXhPjcYY-A4sk30
 # after approval, API keys can be retrieved from here: https://beta.openai.com/docs/developer-quickstart 
 # DO NOT expose api keys in public
-gpt3_api_keys = ['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', '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', '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']
+gpt3_api_keys = ['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']
 
 """Example output from GPT -- so we need to parse accordingly
 ```
@@ -777,16 +818,20 @@ def gpt3_summarizer(text, max_tokens=100, gpt_engine='davinci', task='second_gra
 
   except:
     print("Error occurred in gpt3_summarizer")
+    return None
 
 """For GPT since we expect throttling, we will have to have the caller be intelligent enough to retry/change key/wait etc. so as to not error out"""
 
-gpt3_summarizer(get_byidx(X_eval, 0), gpt_engine='davinci', task='second_grade_summary')
+gpt3_summarizer(get_byidx(X_eval, 0), gpt_engine='davinci', task='second_grade_summary', max_tokens= 10)
 
 gpt3_summarizer(get_byidx(X_eval, 0), gpt_engine='davinci', task='tldr')
 
 gpt3_summarizer(get_byidx(X_eval, 0), gpt_engine='davinci', task='notes_summary')
 
-"""# Evaluation"""
+"""# Evaluation (Deprecated)
+
+Evaluation is captured in the Summary Scorer notebook. Please refer to that for further details
+"""
 
 import absl
 import nltk
@@ -797,6 +842,7 @@ import datasets
 import statistics
 from transformers import pipeline
 
+# deprecated - use the summary scorer notebook instead
 class SummaryMetric():
   def __init__(self):
     self.ner = pipeline("ner")
@@ -841,9 +887,6 @@ class SummaryMetric():
 
     return mean_rouge_sentences, mean_rouge_summary, overall_weighted_rouge
   
-  def _compute(self):
-    pass
-
   def get_entity_coverage(self, predictions, references, ner_model=None):
     if ner_model is not None:
       self.ner = ner_model
@@ -887,14 +930,277 @@ class SummaryMetric():
 
     return mean_rouge_sentences, mean_rouge_summary, overall_weighted_rouge
 
-s = SummaryMetric()
+"""# Misc DataSet Exploration"""
 
-right=10
-missed=2
-wrong=1
-x =  [abs(right - missed - wrong)]
-sign = 1 if (right - missed - wrong) > 0 else -1
-x +=[1] * 9
+import dask
+import pandas as pd
+import math
+import statistics
 
-print(sign * np.exp(x) / np.sum(np.exp(x)))
+n_eval = 2000
+X_eval_topN = X_eval[:n_eval]
+Y_eval_topN = Y_eval[:n_eval]
+Id_eval_topN = Id_eval[:n_eval]
+
+print("Total number of samples in evaluation for length analysis: {}".format(len(X_eval_topN)))
+
+def dask_lazy_eval(df, func):
+  lazy_results = []
+  for index, row in df.iterrows():
+    lazy_result = dask.delayed(func)(row['col'])
+    lazy_results.append(lazy_result)
+  res = dask.compute(*lazy_results)
+  return [len(r) for r in res]
+
+len_sents_context = dask_lazy_eval(pd.DataFrame(X_eval_topN, columns=['col']), get_sentences_from_text)
+len_sents_summaries = dask_lazy_eval(pd.DataFrame(Y_eval_topN, columns=['col']), get_sentences_from_text)
+len_words_context = dask_lazy_eval(pd.DataFrame(X_eval_topN, columns=['col']), get_words)
+len_words_summaries = dask_lazy_eval(pd.DataFrame(Y_eval_topN, columns=['col']), get_words)
+
+# Commented out IPython magic to ensure Python compatibility.
+import matplotlib.pyplot as plt
+import numpy as np
+# %matplotlib inline
+
+plt.hist(len_sents_context, bins=10)
+
+plt.hist(len_sents_summaries, bins=10)
+
+plt.hist(len_words_context, bins=10)
+
+plt.hist(len_words_summaries, bins=10)
+
+"""# Summary Run"""
+
+# for some reason, the write to csv file functionality is broken in later pandas
+# compression options seem to not be supported anymore in later versions
+!pip uninstall -q -y pandas
+!pip install -q pandas==1.1.5
+
+import pandas as pd
+import datetime
+from google.colab import files
+from summarizer import Summarizer
+
+column_names = ["model_id", "model_variant", "story_id", "decoded", "reference", "expected_token_count_decoded", "word_count_decoded", "word_count_reference"]
+
+df = pd.DataFrame(columns = column_names)
+available_summarizers = ['topN', 'tfidf', 'cossim_rank', 
+                         'bert_ext', 'matchsum', 'pegasus', 't5',
+                         'bart', 'gpt3']
+
+def write_to_csv(df):
+  now = datetime.datetime.now()
+  filename = now.strftime("%Y-%m-%d-%H-%M-%S")
+
+  compression_opts = dict(method='zip', archive_name='data_model_outputs.csv')
+
+  df.to_csv('{}.zip'.format(filename), index=False, compression = compression_opts)
+  files.download('{}.zip'.format(filename))
+
+def get_summaries(data, X_eval, Y_eval, Id_eval, lengths_tokens = [20, 30, 45, 60], save_after_len_run=True):
+  assertion = [m in available_summarizers for m in summarizer_list]
+  assert sum(assertion) == len(summarizer_list)
+  if 'bert_ext' in summarizer_list:
+    bert_summ = Summarizer()
+  
+  # we need a pruned context for larger models since they only handle 512 tokens
+  if any(item in ['pegasus', 'bart', 'gpt3', 'bert_ext'] for item in summarizer_list):
+    pruned_context = []
+    for x in X_eval:
+      # max tokens can be 512, there's some padding etc that is added by default
+      # thus we give a length of tokens to be much shorter (say 420) so that with tokenization/padding/overhead, 
+      # we reach around 480
+      pruned_context.append(prune_text(x, max_token_len=420))
+
+  if 't5' in summarizer_list:
+    pruned_context_t5 = []
+    for x in X_eval:
+      # t5 adds even more tokenization, so we need an even shorter max_token_len
+      # for example, providing max_token_len=420, produces articles of 558 tokens (which is > 512)
+      # shortening to 350
+      pruned_context_t5.append(prune_text(x, max_token_len=350))
+
+  for length in lengths_tokens:
+    print("Performing summarization - outputting max token length: {}".format(length))
+
+    if 'pegasus' in summarizer_list:
+      summaries = pegasus_summarizer(pruned_context, pegasus_model, pegasus_tokenizer, max_length = length)
+      for i in range(len(Id_eval)):
+        summary = summaries[i]
+        summary = prune_text(summary, max_token_len = length)
+        d = pd.DataFrame([['pegasus', 'google-xsum', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+
+    if 't5' in summarizer_list:
+      summaries = t5_summarizer(pruned_context_t5, t5_model=t5_model, t5_tokenizer=t5_tokenizer, max_length = length)
+      for i in range(len(Id_eval)):
+        summary = summaries[i]
+        summary = prune_text(summary, max_token_len = length)
+        d = pd.DataFrame([['t5', 'none', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+
+    if 'bart' in summarizer_list:
+      summaries = bart_summarizer(pruned_context, bart_model, bart_tokenizer, max_length = length)
+      for i in range(len(Id_eval)):
+        summary = summaries[i]
+        summary = prune_text(summary, max_token_len = length)
+        d = pd.DataFrame([['bart', 'none', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+
+    # for serial summarizers
+    for i in range(len(Id_eval)):
+      if 'topN' in summarizer_list:
+        # vanilla variant
+        topn = 20
+        summary = topN_summarizer(X_eval[i], top = topn)
+        summary = prune_text(summary, max_token_len = length)
+        variant = 'topN=' + str(topn)
+        d = pd.DataFrame([['topN', variant, Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+
+        # top and bottom summarizer
+        summary = top_bottom_summarizer(X_eval[i])
+        summary = prune_text(summary, max_token_len = length)
+        d = pd.DataFrame([['topN', 'top_bottom', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+
+        # shuffle variant
+        summary = shuffle_summarizer(X_eval[i], maxlen = length)
+        summary = prune_text(summary, max_token_len = length)
+        d = pd.DataFrame([['topN', 'shuffle', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+
+      if 'tfidf' in summarizer_list:
+        summary = tfidf_summarizer(X_eval[i], max_sent_in_summary=20)
+        summary = prune_text(summary, max_token_len = length)
+        d = pd.DataFrame([['tfidf_vec', 'none', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+      
+      if 'cossim_rank' in summarizer_list:      
+        summary = textrank_glove_summarizer(X_eval[i], glove_ndim=100, num_sentences=20)
+        summary = prune_text(summary, max_token_len = length)  
+        d = pd.DataFrame([['cossim_rank', 'glove_100', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+      
+        summary = textrank_glove_summarizer(X_eval[i], glove_ndim=300, num_sentences=20)
+        summary = prune_text(summary, max_token_len = length)  
+        d = pd.DataFrame([['cossim_rank', 'glove_300', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+      
+      if 'bert_ext' in summarizer_list:
+        model, summary = bert_ext_summarizer(pruned_context[i], model=bert_summ, num_sentences=20)
+        summary = prune_text(summary, max_token_len = length)  
+        d = pd.DataFrame([['bert_ext', 'none', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+
+      if 'matchsum' in summarizer_list:
+        pass
+      
+      if 'gpt3' in summarizer_list:
+        import time
+        # sleep 1 sec to avoid api throttling
+        time.sleep(1)
+
+        summary = gpt3_summarizer(pruned_context[i], max_tokens = length, task='tldr')
+        if summary == None:
+          print("GPT3 quota reached - please retry with diff key")
+          continue
+        # summary = prune_text(summary, max_token_len = length)
+        d = pd.DataFrame([['gpt3', 'tldr_davinci', Id_eval[i], summary, Y_eval[i], length, len(get_words(summary)), len(get_words(Y_eval[i]))]], columns=column_names)
+        data = pd.concat([data, d])
+
+    if save_after_len_run:
+      write_to_csv(data)
+  
+  return data
+
+def prepare_varying_target_summary_len_set(X_eval, Y_eval, Id_eval, max_samples=40):
+  lengths_tokens = [20, 30, 45, 60]
+  summ_X_eval = []
+  summ_Y_eval = []
+  summ_Id_eval = []
+  counter = {}
+  for l in lengths_tokens:
+    counter[l] = 0
+
+  bucket_limit = max_samples/len(lengths_tokens)
+  for i in range(len(Id_eval)):
+    len_summary = len(get_words(Y_eval[i]))
+    if len_summary < 20:
+      continue
+    if len_summary >= 20 and len_summary < 25 and counter[20] <= bucket_limit:
+      summ_X_eval.append(X_eval[i])
+      summ_Y_eval.append(Y_eval[i])
+      summ_Id_eval.append(Id_eval[i])
+      counter[20] +=1
+    elif len_summary <= 30 and counter[30] <= bucket_limit:
+      summ_X_eval.append(X_eval[i])
+      summ_Y_eval.append(Y_eval[i])
+      summ_Id_eval.append(Id_eval[i])
+      counter[30] +=1
+    elif len_summary <= 45 and counter[45] <= bucket_limit:
+      summ_X_eval.append(X_eval[i])
+      summ_Y_eval.append(Y_eval[i])
+      summ_Id_eval.append(Id_eval[i])
+      counter[45] +=1
+    elif len_summary <= 60 and counter[60] <= bucket_limit:
+      summ_X_eval.append(X_eval[i])
+      summ_Y_eval.append(Y_eval[i])
+      summ_Id_eval.append(Id_eval[i])
+      counter[60] +=1
+
+  return summ_X_eval, summ_Y_eval, summ_Id_eval
+
+# produce similar samples of varying target length such that the summarizers are not penalized if they produce longer summaries
+summ_X_eval, summ_Y_eval, summ_Id_eval = prepare_varying_target_summary_len_set(X_eval, Y_eval, Id_eval, max_samples=40)
+
+# Commented out IPython magic to ensure Python compatibility.
+import matplotlib.pyplot as plt
+import numpy as np
+# %matplotlib inline
+len_words_summaries = dask_lazy_eval(pd.DataFrame(summ_Y_eval, columns=['col']), get_words)
+plt.hist(len_words_summaries, bins=10)
+
+len(len_words_summaries)
+
+str(sorted(len_words_summaries))
+
+summarizer_list = ['tfidf', 'topN', 'cossim_rank', 'bert_ext']
+summarizer_list = ['gpt3']
+df = pd.read_csv('data_model_outputs.csv')
+df_res = get_summaries(df, save_after_len_run = False, lengths_tokens=[60], X_eval = summ_X_eval, Y_eval = summ_Y_eval, Id_eval = summ_Id_eval)
+
+write_to_csv(df_res)
+
+# for a summary generated that is say 10 tokens long, and reference tokens being say 30
+# we know summary metrics like ROUGE will look worse (since it is calculated on n-gram overlap)
+# compared to a summary generated that is say 25 tokens long (with reference == 30)
+# so we want to remove the rows which we know will have poor summary metrics
+# this is what we capture in the diff_threshold
+
+# this is NOT cheating because we generate summaries of diff lengths [20, 30, 45, 60] against the SAME reference
+# so we are just picking the best summaries (against ref) for each model
+def get_filtered_summ_dataset(verbose=True, diff_threshold=10):
+  df = pd.read_csv('data_model_outputs.csv')
+  df['diff'] = abs(df['word_count_decoded']-df['word_count_reference'])
+  df_filtered = df[df['diff'] <= diff_threshold]
+  if verbose:
+    print("Length of df: {}".format(len(df)))
+    print("Length of df_filtered: {}".format(len(df_filtered)))
+    df_tmp = df[["model_id", "model_variant", "expected_token_count_decoded"]].value_counts()
+    print(df_tmp)
+
+  df_filtered = df_filtered.drop(['diff'], axis=1)
+  write_to_csv(df_filtered)
+
+get_filtered_summ_dataset(diff_threshold=15)
+
+get_filtered_summ_dataset(diff_threshold=10)
+
+get_filtered_summ_dataset(diff_threshold=5)
+
+get_filtered_summ_dataset(diff_threshold=8)
+
+get_filtered_summ_dataset(diff_threshold=12)
 
