@@ -57,7 +57,42 @@ Below, we see a few samples of good vs bad summaries in each dimension
 
 #### Poor Coherence
 
+Reference:
+```
+"There has been an unusually high number of sea lions stranded since January," NOAA representative says .
+The speculation is mothers are having difficulty finding food, leaving pups alone too long or malnourished .
+```
+
+Prediction:
+```
+since January 2015, every month has set a record in "strandings," mostly sea-lion pup. 1,800 [solo] dogs have been responded to this year alone; more than 2004-12 combined -- and it is only mid March!
+```
+
+MODEL: t5-none
+
+This sentence has been penalized for coherence because the second sentence talks about dogs and not sea lions, which is the topic of the article. Moreover, the generated summary fails to capture the essence of why may the sea lions be getting stranded - instead the prediction dives nto more numbers and specifics, which is relevant but it distracts from the uber summary. Full context here.
+
 #### Poor Fluency
+
+Reference:
+```
+Accident happens in Santa Ynez, California, near where Crosby lives .
+The jogger suffered multiple fractures; his injuries are not believed to be life-threatening .
+```
+
+Prediction: 
+```
+David Crosby, an American singer-songwriter, was driving at approximately 50 mph when he struck a jogger with his car.
+Liar 
+
+The Truth: David Crosby, an American singer-songwriter
+```
+
+Model:
+
+gpt3-notes_summary_davinci
+
+We notice that this summary was penalized for fluency because GPT-3 decided to repeat the introduction about David Crosby. It also inserted declarations like "Liar" and "The Truth" - which break fluency and are not very grammatical. Full context here.
 
 #### Poor Consistency
 
@@ -65,6 +100,7 @@ Reference:
 ```Clinton Foundation has taken money from foreign governments .
 Bill Clinton:  "I believe we have done a lot more good than harm"
 ```
+
 Prediction:
 ```
 The Clinton Foundation is a charity that does good works, but it also takes money from countries that do
@@ -77,6 +113,23 @@ gpt3-tldr_davinci
 The phrase: _"The Clinton Foundation is a charity that does good works"_ in the prediction shows that GPT-3 was hallucinating outputs. This text never existed in the context, linked here.
 
 #### Poor Relevance
+
+Reference:
+```
+It's unclear what will become of the other kidnapped Assyrians .
+Syrian Observatory: ISIS has executed nearly 2,000 people since June .
+```
+
+Prediction:
+```
+Islamic State in Iraq and the Levant (ISIS) has released 19 Assyrian Christian hostages, an activist group says.
+```
+
+Model:
+  
+pegasus-google-xsum
+
+This summary failed to capture the main highlight - that ISIS had already killed over 2000 people and it is unclear what will happen to the other kidnapped Assyrians. Full context here.
 
 ### Summary Length vs Summary Quality
 
