@@ -52,17 +52,32 @@ We show the distribution of scores for coherence below
 
 ![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_coherence.png)
 
+### Example Outputs from Models
 Below, we see a few samples of good vs bad summaries in each dimension
 
-#### Coherence
+#### Poor Coherence
 
-#### Fluency
+#### Poor Fluency
 
-#### Consistency
+#### Poor Consistency
 
-#### Relevance
+Reference:
+```Clinton Foundation has taken money from foreign governments .
+Bill Clinton:  "I believe we have done a lot more good than harm"
+```
+Prediction:
+```
+*The Clinton Foundation is a charity that does good works*, but it also takes money from countries that do
+```
 
-#### Summary Length vs Summary Quality
+Model:
+gpt3-tldr_davinci
+
+The above highlighted italicized prediction shows that GPT-3 was hallucinating outputs. This text never existed in the context, linked here.
+
+#### Poor Relevance
+
+### Summary Length vs Summary Quality
 
 As discussed above, we generate summaries for each of our selected models against different articles from the CNN/DM validation set. We chose different constrained summary length settings - 20, 30, 45, 60 words, such that we produced different summary lengths using the same model on the same article and we repeated this for several articles.
 
