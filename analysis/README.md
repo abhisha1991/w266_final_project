@@ -52,8 +52,10 @@ We show the distribution of scores for coherence below
 
 ![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_coherence.png)
 
-### Example Outputs from Models
+
 Below, we see a few samples of good vs bad summaries in each dimension
+
+### Example Outputs from Models (BAD)
 
 #### Poor Coherence
 
@@ -133,6 +135,51 @@ pegasus-google-xsum
 
 This summary failed to capture the main highlight - that ISIS had already killed over 2000 people and it is unclear what will happen to the other kidnapped Assyrians. Full context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/isis.txt)
 
+### Example Outputs from Models (GOOD)
+
+#### Good Coherence
+
+Reference:
+```
+Dolce & Gabbana dedicated their fall fashion show to moms .
+Some of the models carried their own babies down the runway .
+```
+
+Prediction:
+```
+It's not every day you see a fashion show dedicated to your mother, but Dolce & Gabbana did just that.
+```
+
+Model: 
+
+pegasus-google-xsum
+
+The model does a good job on bridging the 2 sentences and constructing a novel sentence (not in the context) that captures the main points perfectly. Context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/fashion.txt).
+
+#### Good Fluency
+
+Reference:
+```
+More than 100 schools renamed in honor of students killed in a Taliban schoolhouse attack .
+A six-hour siege at a Peshawar school killed 145 people in December .
+```
+
+Prediction:
+```
+More than 100 schools in Pakistan have been renamed in honor of the children killed in a Taliban siege at a Peshawar school last year.
+```
+
+Model: 
+
+cossim_rank-glove_300
+
+Notice how the above summary captures a long sentence with high fluency conveying the important part in the reference summary. Context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/pak.txt).
+
+#### Good Consistency
+
+
+
+#### Good Relevance
 ### Summary Length vs Summary Quality
 
 As discussed above, we generate summaries for each of our selected models against different articles from the CNN/DM validation set. We chose different constrained summary length settings - 20, 30, 45, 60 words, such that we produced different summary lengths using the same model on the same article and we repeated this for several articles.
