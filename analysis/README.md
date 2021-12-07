@@ -62,4 +62,9 @@ Below, we see a few samples of good vs bad summaries in each dimension
 
 #### Relevance
 
-Finally, we plot the relationship between summary length and summary quality. We observe that there is very little relationship we can establish looking at the graphs. Below we have plotted a few graphs that appeared to show some pattern of summary quality when varying length, but it is still inappropriate to draw any conclusions from this. Note that all graphs for all Model-DimensionScore combination are available in the [zip file](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/varying_length_summ_scores.zip) in the analysis folder. All grpahs have been smoothened for plotting purposes.
+Finally, we plot the relationship between summary length and summary quality. We observe that there is very little relationship we can establish looking at the graphs. Below we have plotted a graphs that appeared to show some pattern of summary quality when varying length, but it is still inappropriate to draw any conclusions from this. Note that all graphs for all Model-DimensionScore combination are available in the [zip file](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/varying_length_summ_scores.zip) in the analysis folder. All grpahs have been smoothened for plotting purposes.
+
+![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/t5_consistency.png)
+
+The above is a sample graph is a smoothened output showing the consistency relationship of t5-base model outputs against summary length. We see that there is no strong relationship observed. The same is true for other model - dimension combinations in the experiment we conducted.
+
