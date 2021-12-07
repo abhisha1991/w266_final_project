@@ -67,13 +67,13 @@ Bill Clinton:  "I believe we have done a lot more good than harm"
 ```
 Prediction:
 ```
-*The Clinton Foundation is a charity that does good works*, but it also takes money from countries that do
+The Clinton Foundation is a charity that does good works, but it also takes money from countries that do
 ```
 
 Model:
 gpt3-tldr_davinci
 
-The above highlighted italicized prediction shows that GPT-3 was hallucinating outputs. This text never existed in the context, linked here.
+The phrase: _"The Clinton Foundation is a charity that does good works"_ in the prediction shows that GPT-3 was hallucinating outputs. This text never existed in the context, linked here.
 
 #### Poor Relevance
 
