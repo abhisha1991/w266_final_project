@@ -14,7 +14,7 @@ Below, we present the models employed and results.
 
 ## Models
 
-The team chose 4 abstractive and 4 extractive models to generate summaries. All models can be found in the Models notebook under the code folder.
+The team chose 4 abstractive and 4 extractive models to generate summaries. All models can be found in the [Models notebook](https://github.com/abhisha1991/w266_final_project/blob/main/code/Models.ipynb) under the code folder.
 
 For extractive models, the team selected:
 1. TopN sentences (including variants of shuffled sentences and top-bottom sentences)
@@ -28,11 +28,19 @@ For abstractive models, the team selected:
 3. T5 - Base
 4. GPT-3 (DaVinci engine with vanilla `notes_summary` and `tldr` tasks)
 
-Note that the team did not pre-train (fine-tune) any of these models on CNN/DM and compared the summaries generated directly. This was done to evaluate baseline summary quality of each of the above models without fine tuning. It was also not possible to fine-tune certain models like GPT-3 (since the team doesn't have access to proprietary model files), so it would be unfair to fine-tune one model (say Pegasus) and not another. Future efforts can involve fine tuning but will require significant compute to do so.
+Note that the team did not pre-train (fine-tune) any of these models on CNN/DM and we compared the summaries generated directly. This was done to evaluate baseline summary quality of each of the above models without fine tuning. It was also not possible to fine-tune certain models like GPT-3 (since the team doesn't have access to proprietary model files), so it would be unfair to fine-tune one model (say Pegasus) and not another. Future efforts can involve fine tuning but will require significant compute to do so.
 
 ## Results
 
 At a high level, we observe that extractive models score higher on fluency and consistency dimensions, when compared to abstractive models. Coherence and relevance are similarly distributed between the 2 model types.
+
+#### Fluency Comparison Between Abstractive and Extractive Approaches to Summarization
+The below image shows that extractive models tend to be more fluent. The plausible justification for this is that extractive models are largely borrowing from the source article. Since the source article is fluent, extractive summaries would tend to be more fluent as well.
+[!img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_fluency.png)
+
+#### Consistency Comparison Between Abstractive and Extractive Approaches to Summarization
+The below image highlights that extractive models are more consistent - in the sense that they tend to more closely entail the source article and do not "make up" facts in the summary. This is understandable because abstractive techniques tend to generate more novel sentences and structures from their language models and sometimes may make up words or phrases that cannot be justified by the source context.
+[!img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_consistency.png)
 
 Below, we see a few samples of good vs bad summaries in each dimension
 
@@ -44,4 +52,4 @@ Below, we see a few samples of good vs bad summaries in each dimension
 
 #### Relevance
 
-Finally, we plot the relationship between summary length and summary quality. We observe that there is very little relationship we can establish looking at the graphs. Below we have plotted a few graphs that appeared to show some pattern of summary quality when varying length, but it is still inappropriate to draw any conclusions from this. Note that all graphs for all Model-DimensionScore combination are available in the zip file in the analysis folder. All grpahs have been smoothened for plotting purposes.
+Finally, we plot the relationship between summary length and summary quality. We observe that there is very little relationship we can establish looking at the graphs. Below we have plotted a few graphs that appeared to show some pattern of summary quality when varying length, but it is still inappropriate to draw any conclusions from this. Note that all graphs for all Model-DimensionScore combination are available in the [zip file](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/varying_length_summ_scores.zip) in the analysis folder. All grpahs have been smoothened for plotting purposes.
