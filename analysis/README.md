@@ -36,11 +36,11 @@ At a high level, we observe that extractive models score higher on fluency and c
 
 #### Fluency Comparison Between Abstractive and Extractive Approaches to Summarization
 The below image shows that extractive models tend to be more fluent. The plausible justification for this is that extractive models are largely borrowing from the source article. Since the source article is fluent, extractive summaries would tend to be more fluent as well.
-[!img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_fluency.png)
+![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_fluency.png)
 
 #### Consistency Comparison Between Abstractive and Extractive Approaches to Summarization
 The below image highlights that extractive models are more consistent - in the sense that they tend to more closely entail the source article and do not "make up" facts in the summary. This is understandable because abstractive techniques tend to generate more novel sentences and structures from their language models and sometimes may make up words or phrases that cannot be justified by the source context.
-[!img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_consistency.png)
+![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_consistency.png)
 
 Below, we see a few samples of good vs bad summaries in each dimension
 
