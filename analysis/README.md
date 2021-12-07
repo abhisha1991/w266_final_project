@@ -19,7 +19,7 @@ The team chose 4 abstractive and 4 extractive models to generate summaries. All 
 For extractive models, the team selected:
 1. TopN sentences (including variants of shuffled sentences and top-bottom sentences)
 2. TF-IDF Vectorizer
-3. Cossim with Text Rank with Glove Embeddings
+3. Cossim (Glove Embeddings - 100D, 300D) with Text Rank
 4. BERT Extractive Summarizer
 
 For abstractive models, the team selected:
@@ -28,7 +28,7 @@ For abstractive models, the team selected:
 3. T5 - Base
 4. GPT-3 (DaVinci engine with vanilla `notes_summary` and `tldr` tasks)
 
-Note that the team did not pre-train (fine-tune) any of these models on CNN/DM and we compared the summaries generated directly. This was done to evaluate baseline summary quality of each of the above models without fine tuning. It was also not possible to fine-tune certain models like GPT-3 (since the team doesn't have access to proprietary model files), so it would be unfair to fine-tune one model (say Pegasus) and not another. Future efforts can involve fine tuning but will require significant compute to do so.
+Note that the team did not pre-train (fine-tune) any of these models on CNN/DM and we evaluated the summaries generated directly. This was done to evaluate baseline summary quality of each of the above models without fine tuning. It was also not possible to fine-tune certain models like GPT-3 (since the team doesn't have access to proprietary model files), so it would be unfair to fine-tune one model (say Pegasus) and not another. Future efforts can involve fine tuning but will require significant compute to do so.
 
 ## Results
 
