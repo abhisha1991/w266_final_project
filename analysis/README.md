@@ -173,7 +173,7 @@ Model:
 
 cossim_rank-glove_300
 
-Notice how the above summary captures a long sentence with high fluency conveying the important part in the reference summary. Context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/pak.txt).
+Notice how the above summary captures a long sentence (25 words) with high fluency conveying the important part in the reference summary. Context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/pak.txt).
 
 #### Good Consistency
 
