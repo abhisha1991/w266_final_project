@@ -177,9 +177,43 @@ Notice how the above summary captures a long sentence (25 words) with high fluen
 
 #### Good Consistency
 
+Reference:
+```
+Antibiotic resistance is a pressing public health issue, CDC says .
+Plan would nearly double the amount of federal monies allocated to the fight .
+Patient use of unnecessary antibiotics will be curtailed .
+```
 
+Prediction: 
+```
+To fight the growing problem of infections that can't be treated, the administration of President Barack Obama is implementing a five-year national action plan
+```
+
+Model: 
+
+gpt3-notes_summary_davinci
+
+Fortunately, GPT-3 does not make up new text about the five-year action plan. Context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/obama.txt).
 
 #### Good Relevance
+
+Reference:
+```
+Kremlin releases images of a meeting it says President Vladimir Putin held Friday .
+Putin spokesman dismisses rumors of ill health sparked by Putin's cancellation of planned talks .
+```
+
+Prediction:
+```
+Moscow (CNN)Russian President Vladimir Putin appeared in a series of photos released by the Kremlin on Friday after a week in which canceled engagements led to speculation over his health.
+```
+
+Model: 
+
+bert_ext-none
+
+Though its an extractive model and it extracts a full sentence from the context, it does a good job in selecting the most relevant one. Context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/putin.txt).
+
 ### Summary Length vs Summary Quality
 
 As discussed above, we generate summaries for each of our selected models against different articles from the CNN/DM validation set. We chose different constrained summary length settings - 20, 30, 45, 60 words, such that we produced different summary lengths using the same model on the same article and we repeated this for several articles.
