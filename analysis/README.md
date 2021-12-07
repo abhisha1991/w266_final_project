@@ -45,9 +45,11 @@ The below image highlights that extractive models are more consistent - in the s
 Both relevance and coherence don't reveal any stark differences between the 2 model types. 
 
 We show the distribution of scores for relevance below
+
 ![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_relevance.png)
 
 We show the distribution of scores for coherence below
+
 ![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_coherence.png)
 
 Below, we see a few samples of good vs bad summaries in each dimension
