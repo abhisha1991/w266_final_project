@@ -72,7 +72,7 @@ Model:
 
 t5-base
 
-This sentence has been penalized for coherence because the second sentence talks about dogs and not sea lions, which is the topic of the article. Moreover, the generated summary fails to capture the essence of why may the sea lions be getting stranded - instead the prediction dives nto more numbers and specifics, which is relevant but it distracts from the uber summary. Full context here.
+This sentence has been penalized for coherence because the second sentence talks about dogs and not sea lions, which is the topic of the article. Moreover, the generated summary fails to capture the essence of why may the sea lions be getting stranded - instead the prediction dives nto more numbers and specifics, which is relevant but it distracts from the uber summary. Full context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/sealion.txt).
 
 #### Poor Fluency
 
@@ -94,7 +94,7 @@ Model:
 
 gpt3-notes_summary_davinci
 
-We notice that this summary was penalized for fluency because GPT-3 decided to repeat the introduction about David Crosby. It also inserted declarations like "Liar" and "The Truth" - which break fluency and are not very grammatical. Full context here.
+We notice that this summary was penalized for fluency because GPT-3 decided to repeat the introduction about David Crosby. It also inserted declarations like "Liar" and "The Truth" - which break fluency and are not very grammatical. Full context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/crosby.txt).
 
 #### Poor Consistency
 
@@ -112,7 +112,7 @@ Model:
 
 gpt3-tldr_davinci
 
-The phrase: _"The Clinton Foundation is a charity that does good works"_ in the prediction shows that GPT-3 was hallucinating outputs. This text never existed in the context, linked here.
+The phrase: _"The Clinton Foundation is a charity that does good works"_ in the prediction shows that GPT-3 was hallucinating outputs. This text never existed in the context, linked [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/bill_clinton.txt)
 
 #### Poor Relevance
 
@@ -131,7 +131,7 @@ Model:
   
 pegasus-google-xsum
 
-This summary failed to capture the main highlight - that ISIS had already killed over 2000 people and it is unclear what will happen to the other kidnapped Assyrians. Full context here.
+This summary failed to capture the main highlight - that ISIS had already killed over 2000 people and it is unclear what will happen to the other kidnapped Assyrians. Full context [here](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/contexts/isis.txt)
 
 ### Summary Length vs Summary Quality
 
