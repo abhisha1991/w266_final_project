@@ -42,6 +42,14 @@ The below image shows that extractive models tend to be more fluent. The plausib
 The below image highlights that extractive models are more consistent - in the sense that they tend to more closely entail the source article and do not "make up" facts in the summary. This is understandable because abstractive techniques tend to generate more novel sentences and structures from their language models and sometimes may make up words or phrases that cannot be justified by the source context.
 ![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_consistency.png)
 
+Both relevance and coherence don't reveal any stark differences between the 2 model types. 
+
+We show the distribution of scores for relevance below
+![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_relevance.png)
+
+We show the distribution of scores for coherence below
+![img](https://github.com/abhisha1991/w266_final_project/blob/main/analysis/abs_ext_coherence.png)
+
 Below, we see a few samples of good vs bad summaries in each dimension
 
 #### Coherence
