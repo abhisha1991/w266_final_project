@@ -1,4 +1,4 @@
-# Analysis of ShapSum Results on New Summarization Models
+# Evaluation of ShapSum Framework on New Summaries
 
 Submission by *Carolina Arriaga, Ayman, Abhi Sharma*
 
