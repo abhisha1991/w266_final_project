@@ -68,7 +68,9 @@ Prediction:
 since January 2015, every month has set a record in "strandings," mostly sea-lion pup. 1,800 [solo] dogs have been responded to this year alone; more than 2004-12 combined -- and it is only mid March!
 ```
 
-MODEL: t5-none
+Model: 
+
+t5-base
 
 This sentence has been penalized for coherence because the second sentence talks about dogs and not sea lions, which is the topic of the article. Moreover, the generated summary fails to capture the essence of why may the sea lions be getting stranded - instead the prediction dives nto more numbers and specifics, which is relevant but it distracts from the uber summary. Full context here.
 
