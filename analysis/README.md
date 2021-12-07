@@ -71,6 +71,7 @@ The Clinton Foundation is a charity that does good works, but it also takes mone
 ```
 
 Model:
+
 gpt3-tldr_davinci
 
 The phrase: _"The Clinton Foundation is a charity that does good works"_ in the prediction shows that GPT-3 was hallucinating outputs. This text never existed in the context, linked here.
